@@ -86,15 +86,22 @@ module API
 				end
 
 				post 'create_user' do
-					user = User.new(declared(params).user)
-					if user.save
+					user = User.find_by_fb_id params[:user][:fb_id]
+					if user.present?
 						code = '200'
-						status = 'Created'
+						status = 'Already exists'
 						response_data = API::V1::Entities::Users::User.represent(user)
 					else
-						code = '422'
-						status = 'Unprocessable entity'
-						response_data = user.errors
+						user = User.new declared(params).user
+						if user.save
+							code = '200'
+							status = 'Created'
+							response_data = API::V1::Entities::Users::User.represent(user)
+						else
+							code = '422'
+							status = 'Unprocessable entity'
+							response_data = user.errors
+						end
 					end
 					return {
 							code: code, status: status , data: response_data
